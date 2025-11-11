@@ -6,6 +6,12 @@
 
 ;;; Code:
 
+;; TODO use treesitter properly: look into treesit-auto
+;; (or manual treesitter https://www.masteringemacs.org/article/how-to-get-started-tree-sitter)
+;; & combobulate
+;; TODO checkout the whole corfu + orderless etc stack instead of counsel + ivy + company
+
+
 
 ;; ---- INIT ----
 
@@ -59,28 +65,18 @@
 ;; the variable modified to control transparency
 (defvar opacity *opacity*)
 
-(when *is-a-mac*
-  ;; if emacs starts up behind all other open applications
-  ;; https://emacs.stackexchange.com/a/83155
-  (select-frame-set-input-focus (selected-frame))
-  ;; gls is part of coreutils (brew install coreutils)
-  (setq insert-directory-program (or (executable-find "gls") "ls")))
+;; my own lisp/ folder is added to the load-path in early-init.el
+(require 'funcs)
+;; show startup time in minibuffer
+(add-hook 'emacs-startup-hook 'efs/display-startup-time)
+
+;; load shell variables asap
+(require 'init-exec-path)
 
 (setq custom-file (locate-user-emacs-file "custom.el"))
 
 (setq user-full-name "Marco A. Gallo"
       user-mail-address "marco.gallo0530@gmail.com")
-
-
-;; load custom code
-(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-
-(require 'init-exec-path)
-(require 'funcs)
-
-
-;; show startup time in minibuffer
-(add-hook 'emacs-startup-hook 'efs/display-startup-time)
 
 
 ;; ---- BASIC UI ----
@@ -92,19 +88,14 @@
       visible-bell nil
       display-line-numbers-type 'relative
       require-final-newline t
-      global-auto-revert-non-file-buffers t)
+      global-auto-revert-non-file-buffers t
+      vc-follow-symlinks t
+      help-window-select t)
 
 (setq-default indent-tabs-mode nil)
 
 ;; built in theme
 (load-theme 'modus-vivendi-deuteranopia)
-
-;; disable some modes & indent via spaces, not tabs (default)
-(dolist (mode '(scroll-bar-mode
-                tool-bar-mode
-                tooltip-mode
-                menu-bar-mode))
-  (funcall mode -1))
 
 ;; enable the column number in the modeline, together with the line number
 (column-number-mode)
@@ -164,7 +155,7 @@
   :custom
   (auto-package-update-interval 7)
   (auto-package-update-prompt-before-update t)
-  (auto-package-update-hide-results t)
+  (auto-package-update-hide-results nil)
   (auto-package-update-delete-old-versions t)
   :config
   (auto-package-update-maybe)
@@ -172,6 +163,14 @@
 
 
 ;; ---- ADDITIONAL UI/UX ----
+
+
+(when *is-a-mac*
+  ;; if emacs starts up behind all other open applications
+  ;; https://emacs.stackexchange.com/a/83155
+  (select-frame-set-input-focus (selected-frame))
+  ;; gls is part of coreutils (brew install coreutils)
+  (setq-default insert-directory-program (or (executable-find "gls") "ls")))
 
 
 ;; vim keybindings
@@ -198,6 +197,7 @@
   :config
   (evil-collection-init))
 
+
 ;; ivy and counsel help with emacs commands completion generally (completion-read)
 ;; https://www.reddit.com/r/emacs/comments/1bz0ekn/company_vertico_corfu_corfusion/
 (use-package ivy
@@ -215,6 +215,8 @@
          :map ivy-reverse-i-search-map
          ("C-k" . ivy-previous-line)
          ("C-d" . ivy-reverse-i-search-kill))
+  :custom
+  (ivy-use-selectable-prompt t)
   :config
   (ivy-mode 1))
 
@@ -259,8 +261,8 @@
 
 ;; pop up a completion menu after partial keybinding insertion. built-in, just activate the mode
 (use-package which-key
-  :diminish which-key-mode
   :defer 0
+  :diminish which-key-mode
   :config
   (which-key-mode))
 
@@ -298,31 +300,10 @@
 (use-package windresize)
 
 (use-package page-break-lines
-  :config
-  (global-page-break-lines-mode))
+  :diminish page-break-lines-mode
+  :hook
+  (after-init-hook . global-page-break-lines-mode))
 
-
-;; (use-package emojify
-;;   :hook (after-init . global-emojify-mode))
-
-;; (use-package parrot
-;;   :config
-;;   (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
-;;   (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
-;;   (global-set-key (kbd "C-c s") 'parrot-start-animation)
-
-;;   (parrot-set-parrot-type 'thumbsup)
-
-;;   (parrot-mode)
-
-;;   (setq parrot-rotate-dict
-;;         '((:rot ("yes" "no") :caps t :upcase t))))
-
-;; (add-hook 'parrot-click-hook #'xqz-u/on-python-save)
-
-
-;; (use-package pkgbuild-mode)
-;; (add-to-list 'auto-mode-alist '("/PKGBUILD$" . pkgbuild-mode))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -337,10 +318,10 @@
   (sp-use-paredit-bindings)
   (smartparens-global-mode))
 
-;; enables a minibuffer showing the commands corresponding to the keys pressed.
-;; toggle the mode & call (clm/toggle-command-log-buffer)
-(use-package command-log-mode
-  :commands command-log-mode)
+
+;; use this code to enable keycast-mode-line-mode when using doom-modeline
+;; https://github.com/tarsius/keycast/issues/7#issuecomment-2387310012
+(use-package keycast)
 
 
 (use-package highlight-indentation
@@ -355,8 +336,9 @@
   (magit-status-show-untracked-files 'all))
 
 ;; to highlight VC changes in the fringe / show diffs inline
-(use-package diff-hl)
-(global-diff-hl-mode)
+(use-package diff-hl
+  :hook
+  (after-init-hook . global-diff-hl-mode))
 
 (use-package projectile
   :diminish projectile-mode
@@ -407,48 +389,32 @@
                      (projects . 5)))
   (dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name))
 
-(require 'init-flymake)
+(use-package flycheck
+  :diminish flycheck-mode
+  :hook
+  (after-init-hook . global-flycheck-mode))
 
 (use-package eglot
   :defer t
   :hook
   (python-mode    . eglot-ensure)
   (python-ts-mode . eglot-ensure)
-  (c-mode         . eglot-ensure))
+  (c-mode         . eglot-ensure)
+  :bind
+  (:map eglot-mode-map ("C-c r" . eglot-rename)))
 
 (add-hook 'eglot-managed-mode-hook
           (lambda () (eglot-inlay-hints-mode -1)))
 
 
+(use-package yasnippet
+  :hook (prog-mode-hook . yas-minor-mode)
+  :config
+  (yas-reload-all))
+
+
 ;; (setq xref-search-program 'ripgrep
 ;;       grep-command "rg -nS --noheading")
-
-
-;; first try indenting, then completion
-;; (setq tab-always-indent 'complete)
-;; ;; completion-at-point (in buffers, equivalent is e.g. company)
-;; (use-package corfu
-;;   :custom
-;;   (corfu-auto t)
-;;   (corfu-cycle t)
-;;   (corfu-preselect 'prompt)
-;;   ;; Use TAB for cycling, default is `corfu-complete'.
-;;   :bind
-;;   (:map corfu-map
-;;	("TAB" . corfu-next)
-;;	([tab] . corfu-next)
-;;	("S-TAB" . corfu-previous)
-;;	([backtab] . corfu-previous))
-;;   :init
-;;   (global-corfu-mode)
-;;   (corfu-popupinfo-mode)
-;;   (corfu-history-mode))
-
-;; (use-package consult)
-
-;; (use-package consult)
-
-;; (use-package vertico)
 
 
 (use-package company
@@ -463,11 +429,11 @@
   :config
   (global-company-mode))
 
-(use-package company-box
-  :hook
-  (company-mode . company-box-mode)
-  :custom
-  (company-box-doc-delay 0.25))
+;; (use-package company-box
+;;   :hook
+;;   (company-mode . company-box-mode)
+;;   :custom
+;;   (company-box-doc-delay 0.25))
 
 (use-package company-prescient
   :after company
@@ -489,7 +455,7 @@
   ;; add clang-format style argument for C-like languages
   (let ((c-format-def (alist-get 'clang-format apheleia-formatters)))
     (setf (alist-get 'clang-format apheleia-formatters)
-          (append c-format-def '("-style" "Chromium")))
+          (append c-format-def '("-style" "file")))
 
     ;; run isort + black on python files
     (setf (alist-get 'isort apheleia-formatters)
@@ -498,13 +464,6 @@
           '(isort black))
     (setf (alist-get 'python-ts-mode apheleia-mode-alist)
           '(isort black))))
-
-;; https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
-;; eval this form, then M-x treesit-install-language-grammar
-(setq treesit-language-source-alist
-      '((c      . ("https://github.com/tree-sitter/tree-sitter-c"))
-        (python . ("https://github.com/tree-sitter/tree-sitter-python"))
-        (yaml   . ("https://github.com/tree-sitter-grammars/tree-sitter-yaml"))))
 
 
 (use-package treemacs
@@ -515,7 +474,7 @@
   :config
   (treemacs-indent-guide-mode t)
   (treemacs-fringe-indicator-mode 'always)
-  ;; (treemacs-project-follow-mode t)
+  (treemacs-project-follow-mode t)
   (treemacs-filewatch-mode t)
   (treemacs-git-mode 'simple)
   (when treemacs-python-executable
@@ -548,54 +507,41 @@
   (python-mode-hook . uv-mode-auto-activate-hook)
   (python-ts-mode-hook . uv-mode-auto-activate-hook))
 
-
-(use-package yaml-mode)
-
-
-(add-to-list 'major-mode-remap-alist
-             '((python-mode . python-ts-mode)
-               (yaml-mode   . yaml-ts-mode)))
-
-
-
 ;; (use-package ein
 ;;   :custom
 ;;   (ein:output-area-inlined-images t)
 ;;   (ein:worksheet-enable-undo t))
 
 
-;; (use-package ess
-;;   ;; :bind
-;;   ;; (:map ess-mode-map
-;;   ;;       ("C-c t" . "%>%")
-;;   ;;       (";" . ess-insert-assign))
-;;   ;; (:map inferior-ess-mode-map
-;;   ;;       ("C-c t" . "%>%")
-;;   ;;       (";" . ess-insert-assign))
-;;   :custom
-;;   (inferior-R-args "--no-save")
-;;   :config
-;;   (add-hook 'inferior-ess-r-mode-hook #'smartparens-mode))
-
-;; (use-package yaml-mode)
-
-;; (use-package clingo-mode
-;;   :custom
-;;   (clingo-path "~/py_envs/krr/bin/clingo"))
-
-;; (use-package go-mode
-;;   :config
-;;   ;; Set up before-save hooks to format buffer and add/delete imports.
-;;   ;; Make sure you don't have other gofmt/goimports hooks enabled.
-;;   (defun lsp-go-install-save-hooks ()
-;;     (add-hook 'before-save-hook #'lsp-format-buffer t t)
-;;     (add-hook 'before-save-hook #'lsp-organize-imports t t))
-;;   (add-hook 'go-mode-hook #'lsp-go-install-save-hooks))
-
-;; (use-package treemacs)
+(use-package yaml-mode)
 
 
-;; (use-package yasnippet-snippets)
+(use-package markdown-mode)
+
+
+(use-package pdf-tools
+  ;; :hook (pdf-view-mode . pdf-view-midnight-minor-mode)
+  ;; :mode
+  ;; (("\\.pdf\\'" . pdf-view-mode))
+
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-width)
+  (setq pdf-annot-activate-created-annotations t)
+  (define-key pdf-view-mode-map (kbd "C-l") 'image-scroll-left)
+  (define-key pdf-view-mode-map (kbd "C-h") 'image-scroll-right)
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward))
+
+;; (require 'pdf-view)
+;; (with-eval-after-load 'pdf-view
+;;   (add-hook 'pdf-view-mode-hook 'auto-revert-mode)
+;;   (add-hook 'pdf-view-mode-hook (lambda () (blink-cursor-mode -1))))
+
+;; (with-eval-after-load 'tex
+;;   (dolist (option TeX-view-program-selection)
+;;     (if (equal (car option) 'output-pdf)
+;;	(setf (cadr option) "PDF Tools"))))
+
 
 ;; (connection-local-set-profile-variables
 ;;   'peregrine-remote-path
@@ -657,41 +603,10 @@
 
 ;; (setq doc-view-continuous t)
 
-;; (use-package markdown-mode)
-
 ;; ;; to show latex in ein notebooks and other places
 ;; (use-package math-preview)
 
-(use-package pdf-tools
-  ;; :hook (pdf-view-mode . pdf-view-midnight-minor-mode)
-  ;; :mode
-  ;; (("\\.pdf\\'" . pdf-view-mode))
-
-  :config
-  (pdf-tools-install)
-  (setq-default pdf-view-display-size 'fit-width)
-  (setq pdf-annot-activate-created-annotations t)
-  (define-key pdf-view-mode-map (kbd "C-l") 'image-scroll-left)
-  (define-key pdf-view-mode-map (kbd "C-h") 'image-scroll-right)
-  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward))
-
 ;; (define-key org-mode-map (kbd "M-}") nil)
-
-;; (require 'pdf-view)
-;; (with-eval-after-load 'pdf-view
-;;   (add-hook 'pdf-view-mode-hook 'auto-revert-mode)
-;;   (add-hook 'pdf-view-mode-hook (lambda () (blink-cursor-mode -1))))
-
-;; (with-eval-after-load 'tex
-;;   (dolist (option TeX-view-program-selection)
-;;     (if (equal (car option) 'output-pdf)
-;;	(setf (cadr option) "PDF Tools"))))
-
-;; (setq vc-follow-symlinks t)
-
-;; (setq ivy-use-selectable-prompt t)
-
-;; (setq help-window-select t)
 
 ;; ;; auto fill and syntax-check every text mode
 ;; (dolist (hook '(flyspell-mode
@@ -712,20 +627,27 @@
 ;; (add-hook 'org-mode-hook (lambda ()
 ;;                            (add-hook 'after-save-hook #'org-babel-tangle-config)))
 
-;; (use-package smudge
-;;   ;; NOTE this works, but the global remote mode is not enabled by default
-;;   ;; :bind-keymap*
-;;   ;; (:map smudge-mode-map
+;; (use-package emojify
+;;   :hook (after-init . global-emojify-mode))
+
+;; (use-package parrot
 ;;   :config
-;;   (setq smudge-oauth2-client-id "db1c6c4d3b5c44f4a6b3edb6a59dfe72"
-;;         smudge-oauth2-client-secret "0bac41c74dcc4b409b3e24ede582cc77"
-;;         smudge-player-status-refresh-interval 10 ;; default 5
-;;         smudge-player-status-format "[%a, %t ◷ %l]")
+;;   (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
+;;   (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
+;;   (global-set-key (kbd "C-c s") 'parrot-start-animation)
 
-;;   (define-key smudge-mode-map (kbd "C-c .") 'smudge-command-map)
+;;   (parrot-set-parrot-type 'thumbsup)
 
-;;   (global-smudge-remote-mode 1))
+;;   (parrot-mode)
 
+;;   (setq parrot-rotate-dict
+;;         '((:rot ("yes" "no") :caps t :upcase t))))
+
+;; (add-hook 'parrot-click-hook #'xqz-u/on-python-save)
+
+
+;; (use-package pkgbuild-mode)
+;; (add-to-list 'auto-mode-alist '("/PKGBUILD$" . pkgbuild-mode))
 
 (require 'init-keyboard)
 
