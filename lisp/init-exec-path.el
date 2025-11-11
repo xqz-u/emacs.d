@@ -15,8 +15,8 @@
 
 
 (when (or (memq window-system '(mac ns x pgtk))
-	  (unless (memq system-type '(ms-dos windows-nt))
-	    (daemonp)))
+          (unless (memq system-type '(ms-dos windows-nt))
+            (daemonp)))
   (exec-path-from-shell-initialize))
 
 (provide 'init-exec-path)

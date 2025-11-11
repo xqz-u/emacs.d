@@ -59,10 +59,10 @@ This variable is used only if you built Emacs with Harfbuzz on a version >= 28")
   ;; Harfbuzz and Mac builds do not need font-specific ligature support
   ;; if they are above emacs-27.
   (when (and (> emacs-major-version 27)
-	   (or (featurep 'ns)
-	      (string-match-p "HARFBUZZ" system-configuration-features))
-	   ;; Emacs loads `composite' at startup
-	   (featurep 'composite))
+             (or (featurep 'ns)
+                 (string-match-p "HARFBUZZ" system-configuration-features))
+             ;; Emacs loads `composite' at startup
+             (featurep 'composite))
     (+ligature-init-composition-table-h)))
 
 

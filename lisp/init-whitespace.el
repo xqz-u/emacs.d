@@ -27,7 +27,7 @@
 
 ;; global before-save hooks
 (dolist (hook '(whitespace-cleanup
-		delete-trailing-whitespace))
+                delete-trailing-whitespace))
   (add-hook 'before-save-hook hook))
 
 
