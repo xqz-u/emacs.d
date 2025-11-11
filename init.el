@@ -31,7 +31,8 @@
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("org"   . "https://orgmode.org/elpa/")
                          ("elpa"  . "https://elpa.gnu.org/packages/")))
-(setq package-native-compile t)
+(setq package-native-compile t
+      package-install-upgrade-built-in t)
 ;; load and activate packages in `packages-load-list`
 (package-initialize)
 ;; refresh ELPA packages info for packages downloaded from `package-archives`
@@ -352,6 +353,10 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
   (magit-status-show-untracked-files 'all))
+
+;; to highlight VC changes in the fringe / show diffs inline
+(use-package diff-hl)
+(global-diff-hl-mode)
 
 (use-package projectile
   :diminish projectile-mode
