@@ -1,3 +1,9 @@
+(defconst *opacity* 90)
+(defconst *opacity-step* 10)
+;; the variable modified to control transparency
+(defvar opacity *opacity*)
+
+
 (defun xqz-u/reset-font-size ()
   "Reset the font size."
   (interactive)

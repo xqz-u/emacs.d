@@ -60,10 +60,6 @@
 
 
 (defconst *is-a-mac* (eq system-type 'darwin))
-(defconst *opacity* 90)
-(defconst *opacity-step* 10)
-;; the variable modified to control transparency
-(defvar opacity *opacity*)
 
 ;; my own lisp/ folder is added to the load-path in early-init.el
 (require 'funcs)
@@ -106,12 +102,14 @@
 (global-hl-line-mode)
 
 ;; Disable line numbers for some modes
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                treemacs-mode-hook
-                eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode -1))))
+(dolist (mode-hook '(org-mode-hook
+                     term-mode-hook
+                     shell-mode-hook
+                     treemacs-mode-hook
+                     eshell-mode-hook
+                     pdf-view-mode-hook))
+  (add-hook mode-hook
+            (lambda () (display-line-numbers-mode -1))))
 
 ;; startup position & size of window frame (daemon too)
 ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Window-Frame-Parameters.html
@@ -259,6 +257,15 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+
+;; use this code to enable keycast-mode-line-mode when using doom-modeline
+;; https://github.com/tarsius/keycast/issues/7#issuecomment-2387310012
+(use-package keycast)
+
+(use-package macrostep
+  :bind
+  (:map emacs-lisp-mode-map ("C-c e" . macrostep-expand)))
+
 ;; pop up a completion menu after partial keybinding insertion. built-in, just activate the mode
 (use-package which-key
   :defer 0
@@ -317,11 +324,6 @@
   (setq sp-show-pair-from-inside t)
   (sp-use-paredit-bindings)
   (smartparens-global-mode))
-
-
-;; use this code to enable keycast-mode-line-mode when using doom-modeline
-;; https://github.com/tarsius/keycast/issues/7#issuecomment-2387310012
-(use-package keycast)
 
 
 (use-package highlight-indentation
@@ -519,23 +521,36 @@
 (use-package markdown-mode)
 
 
+;; TODO maximize opacity in PDF frames
 (use-package pdf-tools
-  ;; :hook (pdf-view-mode . pdf-view-midnight-minor-mode)
-  ;; :mode
-  ;; (("\\.pdf\\'" . pdf-view-mode))
-
   :config
   (pdf-tools-install)
+
   (setq-default pdf-view-display-size 'fit-width)
   (setq pdf-annot-activate-created-annotations t)
-  (define-key pdf-view-mode-map (kbd "C-l") 'image-scroll-left)
-  (define-key pdf-view-mode-map (kbd "C-h") 'image-scroll-right)
-  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward))
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
 
-;; (require 'pdf-view)
-;; (with-eval-after-load 'pdf-view
-;;   (add-hook 'pdf-view-mode-hook 'auto-revert-mode)
-;;   (add-hook 'pdf-view-mode-hook (lambda () (blink-cursor-mode -1))))
+  (add-hook 'pdf-view-mode-hook 'auto-revert-mode)
+  (add-hook 'pdf-view-mode-hook '(lambda () (blink-cursor-mode -1))))
+
+
+(require 'init-whitespace)
+(require 'init-recentf)
+(require 'init-uniquify)
+
+(require 'init-ligatures)
+(require 'init-documentation)
+
+(require 'init-keyboard)
+
+
+(use-package gptel)
+
+
+;; variables configuerd through 'customize' interface
+(when (file-exists-p custom-file)
+  (load custom-file))
+
 
 ;; (with-eval-after-load 'tex
 ;;   (dolist (option TeX-view-program-selection)
@@ -649,22 +664,5 @@
 ;; (use-package pkgbuild-mode)
 ;; (add-to-list 'auto-mode-alist '("/PKGBUILD$" . pkgbuild-mode))
 
-(require 'init-keyboard)
-
-(require 'init-whitespace)
-(require 'init-recentf)
-(require 'init-uniquify)
-
-(require 'init-ligatures)
-(require 'init-documentation)
-
-
-(use-package gptel)
-
-
-;; variables configuerd through 'customize' interface
-(when (file-exists-p custom-file)
-  (load custom-file))
-
-
 (provide 'init)
+;;; init.el ends here
