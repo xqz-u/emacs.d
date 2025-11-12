@@ -9,7 +9,8 @@
 ;; TODO use treesitter properly: look into treesit-auto
 ;; (or manual treesitter https://www.masteringemacs.org/article/how-to-get-started-tree-sitter)
 ;; & combobulate
-;; TODO checkout the whole corfu + orderless etc stack instead of counsel + ivy + company
+;; TODO checkout the whole vertico + corfu etc stack instead of ivy + company
+;; https://www.reddit.com/r/emacs/comments/1fc6igt/what_is_a_completion_framework_what_are_the_pros/
 
 
 
@@ -394,7 +395,9 @@
 (use-package flycheck
   :diminish flycheck-mode
   :hook
-  (after-init-hook . global-flycheck-mode))
+  (after-init-hook . global-flycheck-mode)
+  :bind
+  (:map flycheck-mode-map ("C-c ! !" . flymake-show-buffer-diagnostics)))
 
 (use-package eglot
   :defer t
@@ -472,9 +475,9 @@
   :custom
   (treemacs-follow-after-init t)
   (treemacs-sorting 'treemacs--sort-alphabetic-case-insensitive-asc)
+  (treemacs-indent-guide-mode nil)
 
   :config
-  (treemacs-indent-guide-mode t)
   (treemacs-fringe-indicator-mode 'always)
   (treemacs-project-follow-mode t)
   (treemacs-filewatch-mode t)
@@ -500,7 +503,7 @@
 (require 'prelude-c)
 
 
-(use-package python-mode
+(use-package python
   :config
   (define-key python-mode-map (kbd "C-<return>") 'python-shell-send-statement))
 
