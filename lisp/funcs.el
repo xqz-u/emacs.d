@@ -1,4 +1,4 @@
-(defconst *opacity* 90)
+(defconst *opacity* 100)
 (defconst *opacity-step* 10)
 ;; the variable modified to control transparency
 (defvar opacity *opacity*)

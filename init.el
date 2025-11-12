@@ -103,11 +103,12 @@
 (global-hl-line-mode)
 
 ;; Disable line numbers for some modes
-(dolist (mode-hook '(org-mode-hook
+(dolist (mode-hook '(shell-mode-hook
                      term-mode-hook
-                     shell-mode-hook
+                     vterm-mode-hook
                      treemacs-mode-hook
                      eshell-mode-hook
+                     org-mode-hook
                      pdf-view-mode-hook))
   (add-hook mode-hook
             (lambda () (display-line-numbers-mode -1))))
@@ -524,6 +525,19 @@
 (use-package markdown-mode)
 
 
+(defun disable-blink-cursor ()
+  (blink-cursor-mode -1))
+
+(defun disable-hl-line-mode ()
+  (setq-local global-hl-line-mode nil))
+
+
+(use-package vterm
+  :hook
+  (vterm-mode . disable-blink-cursor)
+  (vterm-mode . disable-hl-line-mode))
+
+
 ;; TODO maximize opacity in PDF frames
 (use-package pdf-tools
   :config
@@ -534,7 +548,7 @@
   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
 
   (add-hook 'pdf-view-mode-hook 'auto-revert-mode)
-  (add-hook 'pdf-view-mode-hook '(lambda () (blink-cursor-mode -1))))
+  (add-hook 'pdf-view-mode-hook 'disable-blink-cursor))
 
 
 (require 'init-whitespace)
